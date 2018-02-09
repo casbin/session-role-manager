@@ -19,9 +19,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/casbin/casbin"
+	"github.com/casbin/casbin/file-adapter"
 	"github.com/casbin/casbin/rbac"
 	"github.com/casbin/casbin/util"
 )
+
+func testEnforce(t *testing.T, e *casbin.Enforcer, sub string, obj interface{}, act string, time string, res bool) {
+	t.Helper()
+	if e.Enforce(sub, obj, act, time) != res {
+		t.Errorf("%s, %v, %s, %s: %t, supposed to be %t", sub, obj, act, time, !res, res)
+	}
+}
+
 
 func TestSessionRole(t *testing.T) {
 	rm := NewRoleManager(3)
@@ -213,6 +223,62 @@ func TestGetUsers(t *testing.T) {
 	if !util.ArrayEquals(myRes, []string{}) {
 		t.Error("bravo should have no using roles")
 	}
+}
+
+func TestEnforcer(t *testing.T) {
+	// NewEnforcer(modelPath, policyPath) automatically uses the default
+	// role manager when loading policy. So if we want to use a custom
+	// role manager, and this role manager relies on Casbin policy,
+	// we should manually set the role manager before loading policy.
+	e := casbin.NewEnforcer("examples/rbac_model_with_sessions.conf")
+
+	// Manually set an adapter.
+	a := fileadapter.NewAdapter("examples/rbac_policy_with_sessions.csv")
+	e.SetAdapter(a)
+
+	// Use our role manager.
+	rm := NewRoleManager(10)
+	e.SetRoleManager(rm)
+
+	// If our role manager relies on Casbin policy (like reading "g"
+	// policy rules), then we have to set the role manager before loading
+	// policy.
+	//
+	// Otherwise, we can set the role manager at any time, because role
+	// manager has nothing to do with the adapter.
+	e.LoadPolicy()
+
+	// Current role inheritance tree:
+	//          delta          echo          foxtrott
+	//             \            / \           /
+	//      (0-20)  \   (5-15) /   \ (10-20) / (10-12)
+	//               \        /     \       /
+	//                 bravo         charlie
+	//                   \             /
+	//             (0-10) \           / (5-15)
+	//                     \         /
+	//                        alpha
+
+	// Note: we use small integers as time range just for example, in real
+	// environment, it will be Unix time range like (1508503308708903372-1508506908708903907)
+
+	testEnforce(t, e, "alpha", "data1", "read", "00", true)
+	testEnforce(t, e, "alpha", "data1", "read", "05", true)
+	testEnforce(t, e, "alpha", "data1", "read", "10", true)
+	testEnforce(t, e, "alpha", "data1", "read", "15", false)
+	testEnforce(t, e, "alpha", "data1", "read", "20", false)
+
+	testEnforce(t, e, "alpha", "data2", "read", "00", false)
+	testEnforce(t, e, "alpha", "data2", "read", "05", true)
+	testEnforce(t, e, "alpha", "data2", "read", "10", true)
+	testEnforce(t, e, "alpha", "data2", "read", "15", true)
+	testEnforce(t, e, "alpha", "data2", "read", "20", false)
+
+	testEnforce(t, e, "alpha", "data3", "read", "00", false)
+	testEnforce(t, e, "alpha", "data3", "read", "05", false)
+	testEnforce(t, e, "alpha", "data3", "read", "10", true)
+	testEnforce(t, e, "alpha", "data3", "read", "15", false)
+	testEnforce(t, e, "alpha", "data3", "read", "20", false)
 }
 
 func testSessionRole(t *testing.T, rm rbac.RoleManager, name1 string, name2 string, requestTime string, res bool) {

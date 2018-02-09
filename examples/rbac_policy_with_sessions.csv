@@ -1,0 +1,10 @@
+p, delta, data1, read
+p, echo, data2, read
+p, foxtrott, data3, read
+
+g, alpha, bravo, 00, 10
+g, alpha, charlie, 05, 15
+g, bravo, delta, 00, 20
+g, bravo, echo, 05, 15
+g, charlie, echo, 10, 20
+g, charlie, foxtrott, 10, 12
