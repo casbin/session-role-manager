@@ -32,6 +32,43 @@ func testEnforce(t *testing.T, e *casbin.Enforcer, sub string, obj interface{}, 
 	}
 }
 
+func testSessionRole(t *testing.T, rm rbac.RoleManager, name1 string, name2 string, requestTime string, res bool) {
+	t.Helper()
+	myRes := rm.HasLink(name1, name2, requestTime)
+
+	if myRes != res {
+		t.Errorf("%s < %s at time %s: %t, supposed to be %t", name1, name2, requestTime, !res, res)
+	}
+}
+
+func testPrintSessionRoles(t *testing.T, rm rbac.RoleManager, name1 string, requestTime string, res []string) {
+	t.Helper()
+	myRes := rm.GetRoles(name1, requestTime)
+
+	if !util.ArrayEquals(myRes, res) {
+		t.Errorf("%s should have the roles %s at time %s, but has: %s", name1, res, requestTime, myRes)
+	}
+}
+
+func getCurrentTime() string {
+	return strconv.FormatInt(time.Now().UnixNano(), 10)
+}
+
+func getAfterCurrentTime() string {
+	return strconv.FormatInt(time.Now().UnixNano() + 1, 10)
+}
+
+func getOneHourAgo() string {
+	return strconv.FormatInt(time.Now().UnixNano()-60*60*100000000000, 10)
+}
+
+func getInOneHour() string {
+	return strconv.FormatInt(time.Now().Add(time.Hour).UnixNano(), 10)
+}
+
+func getAfterOneHour() string {
+	return strconv.FormatInt(time.Now().Add(time.Hour).UnixNano() + 1, 10)
+}
 
 func TestSessionRole(t *testing.T) {
 	rm := NewRoleManager(3)
@@ -279,42 +316,4 @@ func TestEnforcer(t *testing.T) {
 	testEnforce(t, e, "alpha", "data3", "read", "10", true)
 	testEnforce(t, e, "alpha", "data3", "read", "15", false)
 	testEnforce(t, e, "alpha", "data3", "read", "20", false)
-}
-
-func testSessionRole(t *testing.T, rm rbac.RoleManager, name1 string, name2 string, requestTime string, res bool) {
-	t.Helper()
-	myRes := rm.HasLink(name1, name2, requestTime)
-
-	if myRes != res {
-		t.Errorf("%s < %s at time %s: %t, supposed to be %t", name1, name2, requestTime, !res, res)
-	}
-}
-
-func testPrintSessionRoles(t *testing.T, rm rbac.RoleManager, name1 string, requestTime string, res []string) {
-	t.Helper()
-	myRes := rm.GetRoles(name1, requestTime)
-
-	if !util.ArrayEquals(myRes, res) {
-		t.Errorf("%s should have the roles %s at time %s, but has: %s", name1, res, requestTime, myRes)
-	}
-}
-
-func getCurrentTime() string {
-	return strconv.FormatInt(time.Now().UnixNano(), 10)
-}
-
-func getAfterCurrentTime() string {
-	return strconv.FormatInt(time.Now().UnixNano() + 1, 10)
-}
-
-func getOneHourAgo() string {
-	return strconv.FormatInt(time.Now().UnixNano()-60*60*100000000000, 10)
-}
-
-func getInOneHour() string {
-	return strconv.FormatInt(time.Now().Add(time.Hour).UnixNano(), 10)
-}
-
-func getAfterOneHour() string {
-	return strconv.FormatInt(time.Now().Add(time.Hour).UnixNano() + 1, 10)
 }
