@@ -15,6 +15,7 @@
 package sessionrolemanager
 
 import (
+	"errors"
 	"sort"
 
 	"github.com/casbin/casbin/rbac"
@@ -48,16 +49,17 @@ func (rm *RoleManager) createRole(name string) *SessionRole {
 }
 
 // Clear clears all stored data and resets the role manager to the initial state.
-func (rm *RoleManager) Clear() {
+func (rm *RoleManager) Clear() error {
 	rm.allRoles = make(map[string]*SessionRole)
+	return nil
 }
 
 // AddLink adds the inheritance link between role: name1 and role: name2.
 // aka role: name1 inherits role: name2.
 // timeRange is the time range when the role inheritance link is active.
-func (rm *RoleManager) AddLink(name1 string, name2 string, timeRange ...string) {
+func (rm *RoleManager) AddLink(name1 string, name2 string, timeRange ...string) error {
 	if len(timeRange) != 2 {
-		return
+		return errors.New("error: timeRange should be 2 parameters")
 	}
 	startTime := timeRange[0]
 	endTime := timeRange[1]
@@ -67,62 +69,64 @@ func (rm *RoleManager) AddLink(name1 string, name2 string, timeRange ...string) 
 
 	session := Session{role2, startTime, endTime}
 	role1.addSession(session)
+	return nil
 }
 
 // DeleteLink deletes the inheritance link between role: name1 and role: name2.
 // aka role: name1 does not inherit role: name2 any more.
 // unused is not used.
-func (rm *RoleManager) DeleteLink(name1 string, name2 string, unused ...string) {
+func (rm *RoleManager) DeleteLink(name1 string, name2 string, unused ...string) error {
 	if !rm.hasRole(name1) || !rm.hasRole(name2) {
-		return
+		return errors.New("error: name1 or name2 does not exist")
 	}
 
 	role1 := rm.createRole(name1)
 	role2 := rm.createRole(name2)
 
 	role1.deleteSessions(role2.name)
+	return nil
 }
 
 // HasLink determines whether role: name1 inherits role: name2.
 // requestTime is the querying time for the role inheritance link.
-func (rm *RoleManager) HasLink(name1 string, name2 string, requestTime ...string) bool {
+func (rm *RoleManager) HasLink(name1 string, name2 string, requestTime ...string) (bool, error) {
 	if len(requestTime) != 1 {
-		return false
+		return false, errors.New("error: requestTime should be 1 parameter")
 	}
 
 	if name1 == name2 {
-		return true
+		return true, nil
 	}
 
 	if !rm.hasRole(name1) || !rm.hasRole(name2) {
-		return false
+		return false, nil
 	}
 
 	role1 := rm.createRole(name1)
-	return role1.hasValidSession(name2, rm.maxHierarchyLevel, requestTime[0])
+	return role1.hasValidSession(name2, rm.maxHierarchyLevel, requestTime[0]), nil
 }
 
 // GetRoles gets the roles that a subject inherits.
 // currentTime is the querying time for the role inheritance link.
-func (rm *RoleManager) GetRoles(name string, currentTime ...string) []string {
+func (rm *RoleManager) GetRoles(name string, currentTime ...string) ([]string, error) {
 	if len(currentTime) != 1 {
-		return nil
+		return nil, errors.New("error: currentTime should be 1 parameter")
 	}
 	requestTime := currentTime[0]
 
 	if !rm.hasRole(name) {
-		return nil
+		return nil, errors.New("error: name does not exist")
 	}
 
 	sessionRoles := rm.createRole(name).getSessionRoles(requestTime)
-	return sessionRoles
+	return sessionRoles, nil
 }
 
 // GetUsers gets the users that inherits a subject.
 // currentTime is the querying time for the role inheritance link.
-func (rm *RoleManager) GetUsers(name string, currentTime ...string) []string {
+func (rm *RoleManager) GetUsers(name string, currentTime ...string) ([]string, error) {
 	if len(currentTime) != 1 {
-		return nil
+		return nil, errors.New("error: currentTime should be 1 parameter")
 	}
 	requestTime := currentTime[0]
 
@@ -133,14 +137,15 @@ func (rm *RoleManager) GetUsers(name string, currentTime ...string) []string {
 		}
 	}
 	sort.Strings(users)
-	return users
+	return users, nil
 }
 
 // PrintRoles prints all the roles to log.
-func (rm *RoleManager) PrintRoles() {
+func (rm *RoleManager) PrintRoles() error {
 	for _, role := range rm.allRoles {
 		util.LogPrint(role.toString())
 	}
+	return nil
 }
 
 // SessionRole is a modified version of the default role.

@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"github.com/casbin/casbin"
-	"github.com/casbin/casbin/file-adapter"
+	"github.com/casbin/casbin/persist/file-adapter"
 	"github.com/casbin/casbin/rbac"
 	"github.com/casbin/casbin/util"
 )
@@ -34,7 +34,7 @@ func testEnforce(t *testing.T, e *casbin.Enforcer, sub string, obj interface{}, 
 
 func testSessionRole(t *testing.T, rm rbac.RoleManager, name1 string, name2 string, requestTime string, res bool) {
 	t.Helper()
-	myRes := rm.HasLink(name1, name2, requestTime)
+	myRes, _ := rm.HasLink(name1, name2, requestTime)
 
 	if myRes != res {
 		t.Errorf("%s < %s at time %s: %t, supposed to be %t", name1, name2, requestTime, !res, res)
@@ -43,7 +43,7 @@ func testSessionRole(t *testing.T, rm rbac.RoleManager, name1 string, name2 stri
 
 func testPrintSessionRoles(t *testing.T, rm rbac.RoleManager, name1 string, requestTime string, res []string) {
 	t.Helper()
-	myRes := rm.GetRoles(name1, requestTime)
+	myRes, _ := rm.GetRoles(name1, requestTime)
 
 	if !util.ArrayEquals(myRes, res) {
 		t.Errorf("%s should have the roles %s at time %s, but has: %s", name1, res, requestTime, myRes)
@@ -137,18 +137,18 @@ func TestHasLink(t *testing.T) {
 
 	alpha := "alpha"
 	bravo := "bravo"
-	if rm.HasLink(alpha, bravo) {
+	if res, _ := rm.HasLink(alpha, bravo); res {
 		t.Errorf("Role manager should not have link %s < %s", alpha, bravo)
 	}
-	if !rm.HasLink(alpha, alpha, getCurrentTime()) {
+	if res, _ := rm.HasLink(alpha, alpha, getCurrentTime()); !res {
 		t.Errorf("Role manager should have link %s < %s", alpha, alpha)
 	}
-	if rm.HasLink(alpha, bravo, getCurrentTime()) {
+	if res, _ := rm.HasLink(alpha, bravo, getCurrentTime()); res {
 		t.Errorf("Role manager should not have link %s < %s", alpha, bravo)
 	}
 
 	rm.AddLink(alpha, bravo, getCurrentTime(), getInOneHour())
-	if !rm.HasLink(alpha, bravo, getCurrentTime()) {
+	if res, _ := rm.HasLink(alpha, bravo, getCurrentTime()); !res {
 		t.Errorf("Role manager should have link %s < %s", alpha, bravo)
 	}
 }
@@ -163,14 +163,14 @@ func TestDeleteLink(t *testing.T) {
 	rm.AddLink(alpha, charlie, getOneHourAgo(), getInOneHour())
 
 	rm.DeleteLink(alpha, bravo)
-	if rm.HasLink(alpha, bravo, getCurrentTime()) {
+	if res, _ := rm.HasLink(alpha, bravo, getCurrentTime()); res {
 		t.Errorf("Role manager should not have link %s < %s", alpha, bravo)
 	}
 
 	rm.DeleteLink(alpha, "delta")
 	rm.DeleteLink(bravo, charlie)
 
-	if !rm.HasLink(alpha, charlie, getCurrentTime()) {
+	if res, _ := rm.HasLink(alpha, charlie, getCurrentTime()); !res {
 		t.Errorf("Role manager should have link %s < %s", alpha, charlie)
 	}
 }
@@ -180,7 +180,7 @@ func TestHierarchieLevel(t *testing.T) {
 
 	rm.AddLink("alpha", "bravo", getOneHourAgo(), getInOneHour())
 	rm.AddLink("bravo", "charlie", getOneHourAgo(), getInOneHour())
-	if rm.HasLink("alpha", "charlie", getCurrentTime()) {
+	if res, _ := rm.HasLink("alpha", "charlie", getCurrentTime()); res {
 		t.Error("Role manager should not have link alpha < charlie")
 	}
 }
@@ -191,10 +191,10 @@ func TestOutdatedSessions(t *testing.T) {
 	rm.AddLink("alpha", "bravo", getOneHourAgo(), getCurrentTime())
 	rm.AddLink("bravo", "charlie", getOneHourAgo(), getInOneHour())
 
-	if rm.HasLink("alpha", "bravo", getInOneHour()) {
+	if res, _ := rm.HasLink("alpha", "bravo", getInOneHour()); res {
 		t.Error("Role manager should not have link alpha < bravo")
 	}
-	if !rm.HasLink("alpha", "charlie", getOneHourAgo()) {
+	if res, _ := rm.HasLink("alpha", "charlie", getOneHourAgo()); !res {
 		t.Error("Role manager should have link alpha < charlie")
 	}
 }
@@ -202,11 +202,11 @@ func TestOutdatedSessions(t *testing.T) {
 func TestGetRoles(t *testing.T) {
 	rm := NewRoleManager(3)
 
-	if rm.GetRoles("alpha") != nil {
+	if res, _ := rm.GetRoles("alpha"); res != nil {
 		t.Error("Calling GetRoles without a time should return nil.")
 	}
 
-	if rm.GetRoles("bravo", getCurrentTime()) != nil {
+	if res, _ := rm.GetRoles("bravo", getCurrentTime()); res != nil {
 		t.Error("bravo should not exist")
 	}
 
@@ -236,27 +236,27 @@ func TestGetUsers(t *testing.T) {
 	rm.AddLink("charlie", "alpha", getOneHourAgo(), getInOneHour())
 	rm.AddLink("delta", "alpha", getOneHourAgo(), getInOneHour())
 
-	myRes := rm.GetUsers("alpha")
+	myRes, _ := rm.GetUsers("alpha")
 	if myRes != nil {
 		t.Errorf("Calling GetUsers without a time should return nil.")
 	}
 
-	myRes = rm.GetUsers("alpha", getCurrentTime())
+	myRes, _ = rm.GetUsers("alpha", getCurrentTime())
 	if !util.ArrayEquals(myRes, []string{"bravo", "charlie", "delta"}) {
 		t.Errorf("Alpha should have the using roles [bravo charlie delta] but has %s", myRes)
 	}
 
-	myRes = rm.GetUsers("alpha", getOneHourAgo())
+	myRes, _ = rm.GetUsers("alpha", getOneHourAgo())
 	if !util.ArrayEquals(myRes, []string{"bravo", "charlie", "delta"}) {
 		t.Errorf("Alpha should have the using roles [bravo charlie delta] but has %s", myRes)
 	}
 
-	myRes = rm.GetUsers("alpha", getAfterOneHour())
+	myRes, _ = rm.GetUsers("alpha", getAfterOneHour())
 	if !util.ArrayEquals(myRes, []string{}) {
 		t.Errorf("Alpha should not have any using roles but has %s", myRes)
 	}
 
-	myRes = rm.GetUsers("bravo", getCurrentTime())
+	myRes, _ = rm.GetUsers("bravo", getCurrentTime())
 	if !util.ArrayEquals(myRes, []string{}) {
 		t.Error("bravo should have no using roles")
 	}
