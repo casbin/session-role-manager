@@ -18,8 +18,8 @@ import (
 	"errors"
 	"sort"
 
-	"github.com/casbin/casbin/rbac"
-	"github.com/casbin/casbin/util"
+	"github.com/casbin/casbin/v2/log"
+	"github.com/casbin/casbin/v2/rbac"
 )
 
 type RoleManager struct {
@@ -143,7 +143,7 @@ func (rm *RoleManager) GetUsers(name string, currentTime ...string) ([]string, e
 // PrintRoles prints all the roles to log.
 func (rm *RoleManager) PrintRoles() error {
 	for _, role := range rm.allRoles {
-		util.LogPrint(role.toString())
+		log.LogPrint(role.toString())
 	}
 	return nil
 }
