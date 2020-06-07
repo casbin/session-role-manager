@@ -19,15 +19,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/casbin/casbin"
-	"github.com/casbin/casbin/persist/file-adapter"
-	"github.com/casbin/casbin/rbac"
-	"github.com/casbin/casbin/util"
+	"github.com/casbin/casbin/v2"
+	fileadapter "github.com/casbin/casbin/v2/persist/file-adapter"
+	"github.com/casbin/casbin/v2/rbac"
+	"github.com/casbin/casbin/v2/util"
 )
 
 func testEnforce(t *testing.T, e *casbin.Enforcer, sub string, obj interface{}, act string, time string, res bool) {
 	t.Helper()
-	if e.Enforce(sub, obj, act, time) != res {
+	if myRes, _ := e.Enforce(sub, obj, act, time); myRes != res {
 		t.Errorf("%s, %v, %s, %s: %t, supposed to be %t", sub, obj, act, time, !res, res)
 	}
 }
@@ -55,7 +55,7 @@ func getCurrentTime() string {
 }
 
 func getAfterCurrentTime() string {
-	return strconv.FormatInt(time.Now().UnixNano() + 1, 10)
+	return strconv.FormatInt(time.Now().UnixNano()+1, 10)
 }
 
 func getOneHourAgo() string {
@@ -67,7 +67,7 @@ func getInOneHour() string {
 }
 
 func getAfterOneHour() string {
-	return strconv.FormatInt(time.Now().Add(time.Hour).UnixNano() + 1, 10)
+	return strconv.FormatInt(time.Now().Add(time.Hour).UnixNano()+1, 10)
 }
 
 func TestSessionRole(t *testing.T) {
@@ -267,7 +267,7 @@ func TestEnforcer(t *testing.T) {
 	// role manager when loading policy. So if we want to use a custom
 	// role manager, and this role manager relies on Casbin policy,
 	// we should manually set the role manager before loading policy.
-	e := casbin.NewEnforcer("examples/rbac_model_with_sessions.conf")
+	e, _ := casbin.NewEnforcer("examples/rbac_model_with_sessions.conf")
 
 	// Manually set an adapter.
 	a := fileadapter.NewAdapter("examples/rbac_policy_with_sessions.csv")
