@@ -1,4 +1,4 @@
-Session Role Manager [![Build Status](https://travis-ci.org/casbin/session-role-manager.svg?branch=master)](https://travis-ci.org/casbin/session-role-manager) [![Coverage Status](https://coveralls.io/repos/github/casbin/session-role-manager/badge.svg?branch=master)](https://coveralls.io/github/casbin/session-role-manager?branch=master) [![Godoc](https://godoc.org/github.com/casbin/session-role-manager?status.svg)](https://godoc.org/github.com/casbin/session-role-manager)
+Session Role Manager [![Coverage Status](https://coveralls.io/repos/github/casbin/session-role-manager/badge.svg?branch=master)](https://coveralls.io/github/casbin/session-role-manager?branch=master) [![Godoc](https://godoc.org/github.com/casbin/session-role-manager?status.svg)](https://godoc.org/github.com/casbin/session-role-manager)
 ====
 
 Session Role Manager is the [Session-based](https://en.wikipedia.org/wiki/Session_(computer_science)) role manager for [Casbin](https://github.com/casbin/casbin). With this library, Casbin can load session-based role hierarchy (user-role mapping) from Casbin policy or save role hierarchy to it. The session is only active in the specified time range.
